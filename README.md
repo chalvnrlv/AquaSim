@@ -28,6 +28,7 @@
 - The fish will swim around, and the name will be visible when the user interacts with the fish (hovering or clicking).
 
 <br> 
+
 ## Milestones
 
 ### Milestone 0: Brainstorming the project
