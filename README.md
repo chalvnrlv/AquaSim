@@ -1,11 +1,15 @@
 # AquaSim: 3D Aquarium Simulator with Custom Fish Drawing and Naming
+
 ## Computer Graphics (A) - Institut Teknologi Sepuluh Nopember
+
 <br>
-| Name   |      NRP     |
-|:----------:|:-------------:|
-| Roofif Alria Dzakwan | 5025221012 |
+
+|          Name         |     NRP    |
+|:---------------------:|:----------:|
+| Roofif Alria Dzakwan  | 5025221012 |
 | Bintang Wibi Hanoraga | 5025221034 |
-| Chalvin Reza Farrel | 5025221054 |
+| Chalvin Reza Farrel   | 5025221054 |
+
 <br>
 
 ## Key Features (with Fish Naming):
