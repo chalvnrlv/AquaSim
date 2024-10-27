@@ -1,66 +1,115 @@
-import * as THREE from 'D:/Chalvin/KULIAH/SEM 5/GRAFKOM/FP/AquaSim/node_modules/three/build/three.module.js/';
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js';
+import { aquariumBounds } from './aquarium.js';  // Import the aquarium boundaries
 
-// Function to create a cube that represents a fish
-export function createFishCube(fishType, color, name) {
-    console.log('Creating Fish:', fishType, color, name);  // Debugging log
+// Array to track all fish in the scene
+const fishList = [];
 
-    // Create a cube geometry to represent the fish
-    const fishGeometry = new THREE.BoxGeometry(0.5, 0.3, 0.2);  // Size of the fish
-    const fishMaterial = new THREE.MeshStandardMaterial({ color });
-    const fish = new THREE.Mesh(fishGeometry, fishMaterial);
+// Function to create a cube representing a fish with a unique front face color
+export function createFishCube(bodyColor, faceColor) {
+    const geometry = new THREE.BoxGeometry(0.5, 0.3, 0.2);  // Fish-like rectangular shape
 
-    // Position the fish randomly within the aquarium
-    fish.position.set(Math.random() * 4 - 2, Math.random() * 2 + 0.5, Math.random() * 2 - 1);
+    // Create an array of materials, with a different color for the front face
+    const materials = [
+        new THREE.MeshBasicMaterial({ color: bodyColor }),  // Left face
+        new THREE.MeshBasicMaterial({ color: bodyColor }),  // Right face
+        new THREE.MeshBasicMaterial({ color: bodyColor }),  // Top face
+        new THREE.MeshBasicMaterial({ color: bodyColor }),  // Bottom face
+        new THREE.MeshBasicMaterial({ color: faceColor }),  // Front face (positive Z-axis)
+        new THREE.MeshBasicMaterial({ color: bodyColor })   // Back face
+    ];
 
-    console.log('Fish position:', fish.position);  // Debugging log
+    // Apply different materials to the cube geometry
+    const fish = new THREE.Mesh(geometry, materials);
 
-    // Store the fish name as metadata
-    fish.userData.name = name;
+    // Add bodyColor to the fish's userData so we can group them by color
+    fish.userData.bodyColor = bodyColor;
 
-    // Create a DOM element for displaying the fish name above the fish
-    const labelDiv = document.createElement('div');
-    labelDiv.className = 'fish-label';
-    labelDiv.style.position = 'absolute';
-    labelDiv.style.color = 'white';
-    labelDiv.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-    labelDiv.style.padding = '2px';
-    labelDiv.style.borderRadius = '3px';
-    labelDiv.innerText = name;
-    document.body.appendChild(labelDiv);
+    // Start the fish at a random position within the aquarium
+    fish.position.set(
+        Math.random() * (aquariumBounds.x * 2) - aquariumBounds.x,
+        Math.random() * (aquariumBounds.y * 2) - aquariumBounds.y,
+        Math.random() * (aquariumBounds.z * 2) - aquariumBounds.z
+    );
 
-    // Function to update label position (name follows the fish)
-    function updateLabelPosition() {
-        const vector = new THREE.Vector3();
-        fish.getWorldPosition(vector);
-        vector.project(camera);
+    // The "forward" direction of the fish is along the positive Z-axis by default
+    fish.userData.forward = new THREE.Vector3(0, 0, 1);  // This is the face of the fish
 
-        const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
-        const y = -(vector.y * 0.5 - 0.5) * window.innerHeight;
-
-        labelDiv.style.left = `${x}px`;
-        labelDiv.style.top = `${y}px`;
-
-        requestAnimationFrame(updateLabelPosition);
-    }
-    updateLabelPosition();
+    // Add the fish to the global fish list for group tracking
+    fishList.push(fish);
 
     return fish;
 }
 
-// Function to make the fish swim (move randomly)
-export function swimBehavior(fish) {
-    const speed = 0.01 + Math.random() * 0.02;  // Random swim speed
-    function moveFish() {
-        fish.position.x += (Math.random() - 0.5) * speed;
-        fish.position.y += (Math.random() - 0.5) * speed;
-        fish.position.z += (Math.random() - 0.5) * speed;
+// Function to calculate the average direction of fish in the same group (same color)
+function calculateGroupDirection(fish) {
+    let groupDirection = new THREE.Vector3();
+    let groupCount = 0;
 
-        // Keep the fish inside the aquarium bounds
-        fish.position.x = Math.max(Math.min(fish.position.x, 2.5), -2.5);
-        fish.position.y = Math.max(Math.min(fish.position.y, 2.5), 0.5);
-        fish.position.z = Math.max(Math.min(fish.position.z, 1.5), -1.5);
+    // Loop through all fish in the scene to find fish with the same color
+    fishList.forEach((otherFish) => {
+        if (otherFish !== fish && otherFish.userData.bodyColor === fish.userData.bodyColor) {
+            // Add the direction of the fish in the same group
+            groupDirection.add(otherFish.userData.forward);
+            groupCount++;
+        }
+    });
 
-        requestAnimationFrame(moveFish);
+    // If there are other fish in the group, average their direction
+    if (groupCount > 0) {
+        groupDirection.divideScalar(groupCount).normalize();  // Average direction
     }
-    moveFish();
+
+    return groupDirection;
+}
+
+// Function to make the fish swim in a more natural left-to-right behavior, rarely turning
+export function swimBehavior(fish) {
+    const speed = 0.02;  // Speed of the fish
+    let turnSpeed = 0.02;  // How fast the fish can turn (rotation speed)
+
+    // Bias movement to favor left-to-right (more movement on the X-axis)
+    let direction = new THREE.Vector3(
+        (Math.random() * 0.8 + 0.2),  // Favor right movement (more bias towards positive X-axis)
+        (Math.random() - 0.5) * 0.2,  // Smaller vertical movement (Y-axis)
+        (Math.random() - 0.5) * 0.2   // Even smaller depth movement (Z-axis)
+    ).normalize();  // Normalize to get a consistent movement direction
+
+    function moveFish() {
+        // Move the fish forward in the direction it's facing
+        fish.position.addScaledVector(direction, speed);
+
+        // Group logic: adjust the fish's direction based on others in the same color group
+        const groupDirection = calculateGroupDirection(fish);
+        if (!groupDirection.equals(new THREE.Vector3())) {
+            // Blend the current direction with the group's direction
+            direction.lerp(groupDirection, 0.05);  // Slow blending for smooth alignment
+        }
+
+        // Occasionally change direction randomly (with very low probability to turn)
+        if (Math.random() < 0.002) {  // Change direction 0.2% of the time (rare)
+            direction = new THREE.Vector3(
+                (Math.random() * 0.8 + 0.2),  // Favor right movement
+                (Math.random() - 0.5) * 0.2,  // Smaller vertical movement
+                (Math.random() - 0.5) * 0.2   // Smaller depth movement
+            ).normalize();
+        }
+
+        // Use the aquarium boundaries from aquarium.js
+        if (fish.position.x > aquariumBounds.x || fish.position.x < -aquariumBounds.x) direction.x = -direction.x;
+        if (fish.position.y > aquariumBounds.y || fish.position.y < -aquariumBounds.y) direction.y = -direction.y;
+        if (fish.position.z > aquariumBounds.z || fish.position.z < -aquariumBounds.z) direction.z = -direction.z;
+
+        // Calculate the quaternion (rotation) for the fish to face its direction
+        let targetQuaternion = new THREE.Quaternion().setFromUnitVectors(
+            fish.userData.forward,  // Fish's default forward direction (Z-axis)
+            direction.clone().normalize()  // The direction the fish is moving toward
+        );
+
+        // Smoothly rotate the fish to face the direction it is moving
+        fish.quaternion.slerp(targetQuaternion, turnSpeed);
+
+        requestAnimationFrame(moveFish);  // Continuously update the movement and rotation
+    }
+
+    moveFish();  // Start the movement and rotation behavior
 }

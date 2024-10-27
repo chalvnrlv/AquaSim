@@ -1,64 +1,42 @@
-import * as THREE from '../node_modules/three/build/three.module.js/';
-import { OrbitControls } from '../node_modules/three/examples/jsm/controls/OrbitControls.js/';
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js';
+import { createFishCube, swimBehavior } from './components/fish.js';  // Import fish functions
 
-// Create scene, camera, and renderer
+// Set up the scene, camera, and renderer
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// OrbitControls
-const controls = new OrbitControls(camera, renderer.domElement);
-camera.position.set(0, 2, 5);
-controls.update();
+// Position the camera (static position for aquarium view)
+camera.position.z = 5;
 
-// Add ambient light
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-scene.add(ambientLight);
+// Handle UI elements
+const bodyColorPicker = document.getElementById('bodyColorPicker');
+const faceColorPicker = document.getElementById('faceColorPicker');
+const deployFishButton = document.getElementById('deployFishButton');
 
-// Aquarium setup (simple glass box)
-import { createAquarium } from './components/aquarium.js';
-createAquarium(scene);
+// Event listener for deploying a new fish
+deployFishButton.addEventListener('click', () => {
+    // Get the selected colors from the pickers
+    const bodyColor = bodyColorPicker.value;
+    const faceColor = faceColorPicker.value;
 
-// Fish deployment behavior
-import { createFishCube, swimBehavior } from './components/fish.js';
+    // Convert hex color values to THREE.js color format
+    const bodyColorHex = new THREE.Color(bodyColor);
+    const faceColorHex = new THREE.Color(faceColor);
 
-// Handle UI interactions
-const fishSelector = document.getElementById('fishSelector');
-const colorPicker = document.getElementById('colorPicker');
-const fishNameInput = document.getElementById('fishName');
-const deployButton = document.getElementById('deployFishButton');
+    // Create a new fish with the selected colors
+    const fish = createFishCube(bodyColorHex, faceColorHex);
+    scene.add(fish);  // Add the fish to the scene
 
-// Event listener for deploying the fish
-deployButton.addEventListener('click', () => {
-    const selectedFish = fishSelector.value;  // Get selected fish type
-    const selectedColor = colorPicker.value;  // Get selected color
-    const fishName = fishNameInput.value;     // Get fish name
-
-    console.log('Deploy Fish Button Clicked');  // Debugging log
-
-    if (!fishName.trim()) {
-        alert("Please enter a name for your fish!");
-        return;
-    }
-
-    console.log('Selected Fish:', selectedFish, 'Color:', selectedColor, 'Name:', fishName);
-
-    // Deploy the fish (use cubes as placeholders)
-    const fish = createFishCube(selectedFish, selectedColor, fishName);
-    scene.add(fish);
-
-    console.log('Fish added to the scene');  // Debugging log
-
-    // Make the fish swim with random movement
+    // Start the fish's swimming behavior
     swimBehavior(fish);
 });
 
-// Render loop
+// Animation loop
 function animate() {
     requestAnimationFrame(animate);
-    controls.update();
     renderer.render(scene, camera);
 }
 animate();
