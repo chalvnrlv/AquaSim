@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AquaSim</title>
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <!-- UI for selecting fish, colors, and naming -->
+    <div id="ui">
+        <select id="fishSelector" title="Select Fish Type">
+            <option value="fish1">Fish 1</option>
+            <option value="fish2">Fish 2</option>
+            <option value="fish3">Fish 3</option>
+        </select>        
+
+        <input type="color" id="colorPicker" value="#ff0000">
+
+        <input type="text" id="fishName" placeholder="Name your fish">
+
+        <button id="deployFishButton" type="button">Deploy Fish</button>
+    </div>
+
+    <!-- Three.js will render its canvas here -->
+    <script type="module" src="/src/index.js"></script>
+</body>
+</html>
