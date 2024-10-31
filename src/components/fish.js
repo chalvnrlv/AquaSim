@@ -64,7 +64,7 @@ function calculateGroupDirection(fish) {
 
 // Function to make the fish swim in a more natural left-to-right behavior, rarely turning
 export function swimBehavior(fish) {
-    const speed = 0.02;  // Speed of the fish
+    const speed = 0.007;  // Speed of the fish
     let turnSpeed = 0.02;  // How fast the fish can turn (rotation speed)
 
     // Bias movement to favor left-to-right (more movement on the X-axis)
