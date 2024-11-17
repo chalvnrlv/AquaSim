@@ -53,3 +53,8 @@
 ### Milestone 4: Final Polish and Deployment
 - Add final touches to the UI, textures, and animations.
 - Test and debug across different devices.
+
+
+## How To run
+
+### run "npm run dev"
