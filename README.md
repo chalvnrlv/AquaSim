@@ -55,6 +55,3 @@
 - Test and debug across different devices.
 
 
-## How To run
-
-### run "npm run dev"
